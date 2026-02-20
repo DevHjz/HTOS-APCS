@@ -1,4 +1,4 @@
-name: HTOS APC Service SYSTEM CI
+name: HTOS APC Service AOSP CI
 
 on: [push, workflow_dispatch]
 
@@ -15,20 +15,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Fake SYSTEM Keystore
+      - name: Generate AOSP-Style Keystore
         run: |
-          # 修改后的 DNAME：
-          # CN (Common Name): HTOS
-          # OU (Organizational Unit): System Core
-          # O (Organization): SYSTEM
-          # L (Locality): Android
-          # ST (State): Internal
-          # C (Country): US
-          keytool -genkey -v -keystore htos_system.jks \
-          -alias system_key -keyalg RSA -keysize 2048 -validity 36500 \
-          -storepass android_system \
-          -keypass android_system \
-          -dname "CN=HTOS, OU=System Core, O=SYSTEM, L=Android, ST=Internal, C=US"
+          # 模拟 AOSP 官方签发者信息：
+          # CN: HTOS Framework
+          # OU: Core
+          # O: Android Open Source Project
+          keytool -genkey -v -keystore htos_aosp.jks \
+          -alias aosp_key -keyalg RSA -keysize 2048 -validity 36500 \
+          -storepass aosp_htos \
+          -keypass aosp_htos \
+          -dname "CN=HTOS Framework, OU=Core, O=Android Open Source Project, L=Mountain View, ST=California, C=US"
 
       - name: Grant Execute Permission
         run: chmod +x gradlew
@@ -38,16 +35,15 @@ jobs:
 
       - name: Sign APK with apksigner
         run: |
-          # 定位构建生成的未签名 APK
           UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk")
-          # 签名并输出最终文件
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks htos_system.jks \
-          --ks-key-alias system_key \
-          --ks-pass pass:android_system \
-          --out HTOS_APCS_System_Signed.apk $UNSIGNED_APK
+          # 签名输出，文件名伪装成 AOSP 补丁包
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks htos_aosp.jks \
+          --ks-key-alias aosp_key \
+          --ks-pass pass:aosp_htos \
+          --out HTOS_AOSP_Patch.apk $UNSIGNED_APK
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HTOS-APCS-System-Build
-          path: HTOS_APCS_System_Signed.apk
+          name: HTOS-AOSP-Official-Build
+          path: HTOS_AOSP_Patch.apk
