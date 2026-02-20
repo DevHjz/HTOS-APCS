@@ -18,17 +18,21 @@ jobs:
       - name: Generate AOSP-Style Keystore
         run: |
           # 模拟 AOSP 官方签发者信息：
-          # CN: HTOS Framework
-          # OU: Core
-          # O: Android Open Source Project
+          # CN: HTOS Framework, OU: Core, O: Android Open Source Project
           keytool -genkey -v -keystore htos_aosp.jks \
           -alias aosp_key -keyalg RSA -keysize 2048 -validity 36500 \
           -storepass aosp_htos \
           -keypass aosp_htos \
           -dname "CN=HTOS Framework, OU=Core, O=Android Open Source Project, L=Mountain View, ST=California, C=US"
 
-      - name: Grant Execute Permission
-        run: chmod +x gradlew
+      # --- 关键补齐步骤 ---
+      - name: Setup Gradle Wrapper
+        run: |
+          # 如果仓库根目录没有 gradlew，则自动初始化
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version 8.2
+          fi
+          chmod +x gradlew
 
       - name: Build Release APK
         run: ./gradlew assembleRelease
