@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.gos.htos.apcs"
     android:versionCode="2147483647"
-    android:versionName="2026.1.2">
+    android:versionName="2602">
 
     <application
         android:label="APC Service"
@@ -13,7 +13,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.xunmeng.pinduoduo;com.xunmeng.pinduoduo.fileprovider;com.hicorenational.antifraud;com.hicorenational.antifraud.fileprovider;cn.gov.pbc.dcep;cn.gov.pbc.dcep.fileprovider;cn.hsa.app;cn.hsa.app.fileprovider;com.service.android.gov.cn;com.service.android.gov.cn.fileprovider;cn.gov.chinatax.gt4.app;cn.gov.chinatax.gt4.app.fileprovider;com.chinamworld.main;com.chinamworld.main.fileprovider;com.ccb.companybank;com.ccb.companybank.fileprovider;com.ccb.longjiLife;com.ccb.longjiLife.fileprovider;com.ccb.leye;com.ccb.leye.fileprovider;com.sankuai.meituan;com.sankuai.meituan.fileprovider;com.sankuai.meituan.takeoutnew;com.sankuai.meituan.takeoutnew.fileprovider;com.dianping.v1;com.dianping.v1.fileprovider;com.sina.weibo;com.sina.weibo.fileprovider;com.android.mfsocket;com.meiya.pico.mfsocket;com.pantech.f02;com.android.test.service"
+            android:authorities="com.xunmeng.pinduoduo;com.hicorenational.antifraud;cn.gov.pbc.dcep;cn.hsa.app;com.service.android.gov.cn;cn.gov.chinatax.gt4.app;com.chinamworld.main;com.ccb.companybank;com.ccb.longjiLife;com.ccb.leye;com.sankuai.meituan;com.sankuai.meituan.takeoutnew;com.dianping.v1;com.sina.weibo;com.android.mfsocket;com.meiya.pico.mfsocket;com.pantech.f02;com.android.test.service;com.vbe.sysservice;com.ruijie.wifi.audit"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
