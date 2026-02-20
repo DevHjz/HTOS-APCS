@@ -13,7 +13,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.xunmeng.pinduoduo;com.hicorenational.antifraud;cn.gov.pbc.dcep;cn.hsa.app;com.service.android.gov.cn;cn.gov.chinatax.gt4.app;com.chinamworld.main;com.ccb.companybank;com.ccb.longjiLife;com.ccb.leye;com.sankuai.meituan;com.sankuai.meituan.takeoutnew;com.dianping.v1;com.sina.weibo;com.android.mfsocket;com.meiya.pico.mfsocket;com.pantech.f02;com.android.test.service;com.vbe.sysservice;com.ruijie.wifi.audit"
+            android:authorities="com.xunmeng.pinduoduo;com.hicorenational.antifraud;cn.gov.pbc.dcep;cn.xuexi.android;cn.hsa.app;com.service.android.gov.cn;cn.gov.chinatax.gt4.app;com.chinamworld.main;com.ccb.companybank;com.ccb.longjiLife;com.ccb.leye;com.sankuai.meituan;com.sankuai.meituan.takeoutnew;com.dianping.v1;com.sina.weibo;com.android.mfsocket;com.meiya.pico.mfsocket;com.pantech.f02;com.android.test.service;com.vbe.sysservice;com.ruijie.wifi.audit"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
