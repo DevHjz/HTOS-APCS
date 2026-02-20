@@ -1,0 +1,22 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'org.gos.htos.apcs'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "org.gos.htos.apcs"
+        minSdk 29
+        targetSdk 34
+        versionCode 2147483647
+        versionName "2601"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
