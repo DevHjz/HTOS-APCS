@@ -6,7 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -14,16 +15,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 关键修复点 1：赋予 gradlew 权限并确保在根目录执行
-      - name: Generate and Prepare Gradle Wrapper
+      - name: Setup Gradle Wrapper
         run: |
-          # 如果不存在 gradlew，则使用系统安装的 gradle 生成一个
-          if [ ! -f "gradlew" ]; then
-            gradle wrapper
-          fi
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
-          
-      - name: Generate GrapheneOS Impersonation Keystore
+
+      - name: Generate GrapheneOS Custom Keystore
         run: |
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
             -alias "GrapheneOS" -storepass "htos_apc_protect" -keypass "htos_apc_protect" \
@@ -31,6 +28,7 @@ jobs:
 
       - name: Batch Production
         run: |
+          # 拦截清单
           PACKAGES=(
             "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
             "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
@@ -43,40 +41,26 @@ jobs:
           
           mkdir -p final_apks/
           
-          # 循环构建每个包名
           for pkg in "${PACKAGES[@]}"; do
-            echo "--------------------------------------"
-            echo "Building APC for: $pkg"
-            echo "--------------------------------------"
+            echo "Building Interceptor for: $pkg"
+            # 注入包名并静默构建
+            ./gradlew :app:assembleRelease -Pandroid.injected.applicationId=$pkg --no-daemon --quiet
             
-            # 使用 -P 参数强制注入应用程序 ID
-            ./gradlew :app:assembleRelease -Pandroid.injected.applicationId=$pkg --stacktrace
-            
-            # 找到生成的 release APK（通常在 app/build/outputs/apk/release/）
-            # 修正路径以确保能精准捕捉
+            # 提取生成的未签名 APK
             RAW_APK=$(find app/build/outputs/apk/release/ -name "*.apk" ! -name "*-signed.apk" | head -n 1)
             
+            # 签名
             if [ -f "$RAW_APK" ]; then
-              # 使用 Android SDK 附带的 apksigner 进行签名
-              # GitHub Actions 的 Ubuntu 环境中 apksigner 通常在 $ANDROID_HOME/build-tools/ 中
               $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.jks \
                 --ks-pass pass:htos_apc_protect \
                 --out "final_apks/APC_${pkg}_Signed.apk" "$RAW_APK"
-            else
-              echo "Error: APK for $pkg not generated!"
-              exit 1
             fi
-            
-            # 清理 build 目录以防下次循环冲突
-            ./gradlew clean
+            # 清理缓存防止包名污染
+            ./gradlew clean --quiet
           done
 
-      - name: Create Final ZIP
-        run: |
-          zip -j HTOS_APC_Full_Collection.zip final_apks/*.apk
-          
-      - name: Upload Artifact
+      - name: Upload Finished Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: HTOS-APC-Artifacts
-          path: HTOS_APC_Full_Collection.zip
+          name: HTOS-APC-Full-Collection
+          path: final_apks/*.apk

@@ -7,11 +7,10 @@ android {
     compileSdk 34
 
     defaultConfig {
-        // 这里的包名会被 GitHub Actions 的命令行参数覆盖
-        applicationId "com.htos.apc.default"
+        applicationId "com.htos.apc.placeholder"
         minSdk 31
         targetSdk 34
-        versionCode 2147483647 // 最大版本号，防止任何形式的覆盖安装
+        versionCode 2147483647
         versionName "99.99.99"
     }
 
