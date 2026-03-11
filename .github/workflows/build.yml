@@ -1,53 +1,66 @@
-name: HTOS APC Service AOSP CI
+name: HTOS APC Batch Build
 
 on: [push, workflow_dispatch]
 
 jobs:
-  build-and-sign:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate AOSP-Style Keystore
-        run: |
-          # 模拟 AOSP 官方签发者信息：
-          # CN: HTOS Framework, OU: Core, O: Android Open Source Project
-          keytool -genkey -v -keystore htos_aosp.jks \
-          -alias aosp_key -keyalg RSA -keysize 2048 -validity 36500 \
-          -storepass aosp_htos \
-          -keypass aosp_htos \
-          -dname "CN=HTOS Framework, OU=Core, O=Android Open Source Project, L=Mountain View, ST=California, C=US"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      # --- 关键补齐步骤 ---
-      - name: Setup Gradle Wrapper
+      - name: Generate GrapheneOS Impersonation Keystore
         run: |
-          # 如果仓库根目录没有 gradlew，则自动初始化
-          if [ ! -f gradlew ]; then
-            gradle wrapper --gradle-version 8.2
-          fi
+          mkdir -p keystore
+          keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
+            -alias "GrapheneOS" -storepass "htos_apc_protect" -keypass "htos_apc_protect" \
+            -dname "CN=HTOS, OU=GrapheneOS, O=GrapheneOS Project, L=Toronto, ST=Ontario, C=CA"
+
+      - name: Batch Production
+        run: |
+          # 定义需要拦截的包名列表
+          PACKAGES=(
+            "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
+            "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
+            "com.chinamworld.main" "com.ccb.companybank" "com.ccb.longjiLife"
+            "com.ccb.leye" "com.sankuai.meituan" "com.sankuai.meituan.takeoutnew"
+            "com.dianping.v1" "com.sina.weibo" "com.android.mfsocket"
+            "com.meiya.pico.mfsocket" "com.pantech.f02" "com.android.test.service"
+            "com.vbe.sysservice" "com.ruijie.wifi.audit"
+          )
+          
+          mkdir -p final_apks/
           chmod +x gradlew
+          
+          for pkg in "${PACKAGES[@]}"; do
+            echo "Building Protector for: $pkg"
+            # 清理之前的构建结果
+            ./gradlew clean
+            # 注入包名并构建
+            ./gradlew assembleRelease -Pandroid.injected.applicationId=$pkg
+            
+            # 查找生成的未签名 APK
+            UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+            
+            # 使用伪装签名进行签发
+            apksigner sign --ks release.jks --ks-pass pass:htos_apc_protect \
+              --out "final_apks/APC_${pkg}_Signed.apk" "$UNSIGNED_APK"
+          done
 
-      - name: Build Release APK
-        run: ./gradlew assembleRelease
-
-      - name: Sign APK with apksigner
+      - name: Compress and Upload
         run: |
-          UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk")
-          # 签名输出，文件名伪装成 AOSP 补丁包
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks htos_aosp.jks \
-          --ks-key-alias aosp_key \
-          --ks-pass pass:aosp_htos \
-          --out HTOS_AOSP_Patch.apk $UNSIGNED_APK
-
+          zip -r HTOS_APC_Full_Collection.zip final_apks/
+          
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HTOS-AOSP-Official-Build
-          path: HTOS_AOSP_Patch.apk
+          name: HTOS-APC-Artifacts
+          path: HTOS_APC_Full_Collection.zip

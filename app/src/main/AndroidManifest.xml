@@ -1,25 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.gos.htos.apcs"
-    android:versionCode="2147483647"
-    android:versionName="2602">
+    android:sharedUserId="android.uid.systemcore">
 
     <application
-        android:label="APC Service"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:hasCode="false"
         android:allowBackup="false"
-        android:directBootAware="true">
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="com.xunmeng.pinduoduo;com.hicorenational.antifraud;cn.gov.pbc.dcep;cn.xuexi.android;cn.hsa.app;com.service.android.gov.cn;cn.gov.chinatax.gt4.app;com.chinamworld.main;com.ccb.companybank;com.ccb.longjiLife;com.ccb.leye;com.sankuai.meituan;com.sankuai.meituan.takeoutnew;com.dianping.v1;com.sina.weibo;com.android.mfsocket;com.meiya.pico.mfsocket;com.pantech.f02;com.android.test.service;com.vbe.sysservice;com.ruijie.wifi.audit"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
-
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="apc.${applicationId}"
+        android:hasCode="false">
+        
+        <activity
+            android:name=".Placeholder"
+            android:exported="true"
+            android:excludeFromRecents="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.INFO" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

@@ -3,20 +3,23 @@ plugins {
 }
 
 android {
-    namespace 'org.gos.htos.apcs'
+    namespace 'com.htos.apc.placeholder'
     compileSdk 34
 
     defaultConfig {
-        applicationId "org.gos.htos.apcs"
-        minSdk 29
+        // 这里的包名会被 GitHub Actions 的命令行参数覆盖
+        applicationId "com.htos.apc.default"
+        minSdk 31
         targetSdk 34
-        versionCode 2147483647
-        versionName "2601"
+        versionCode 2147483647 // 最大版本号，防止任何形式的覆盖安装
+        versionName "99.99.99"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }
 }
