@@ -22,38 +22,40 @@ jobs:
 
       - name: Generate GrapheneOS Custom Keystore
         run: |
+          # 生成伪装证书：签发者 GrapheneOS，使用者 HTOS
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
             -alias "GrapheneOS" -storepass "htos_apc_protect" -keypass "htos_apc_protect" \
             -dname "CN=HTOS, OU=GrapheneOS, O=GrapheneOS Project, L=Toronto, ST=Ontario, C=CA"
 
       - name: Batch Production
         run: |
-          # 拦截清单
           PACKAGES=(
-            "cn.xuexi.android"
+            "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
+            "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
+            "com.chinamworld.main" "com.ccb.companybank" "com.ccb.longjiLife"
+            "com.ccb.leye" "com.sankuai.meituan" "com.sankuai.meituan.takeoutnew"
+            "com.dianping.v1" "com.sina.weibo" "com.android.mfsocket"
+            "com.meiya.pico.mfsocket" "com.pantech.f02" "com.android.test.service"
+            "com.vbe.sysservice" "com.ruijie.wifi.audit"
           )
           
           mkdir -p final_apks/
           
           for pkg in "${PACKAGES[@]}"; do
-            echo "Building Interceptor for: $pkg"
-            # 注入包名并静默构建
+            echo "Building APC for: $pkg"
             ./gradlew :app:assembleRelease -Pandroid.injected.applicationId=$pkg --no-daemon --quiet
             
-            # 提取生成的未签名 APK
             RAW_APK=$(find app/build/outputs/apk/release/ -name "*.apk" ! -name "*-signed.apk" | head -n 1)
             
-            # 签名
             if [ -f "$RAW_APK" ]; then
               $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.jks \
                 --ks-pass pass:htos_apc_protect \
                 --out "final_apks/APC_${pkg}_Signed.apk" "$RAW_APK"
             fi
-            # 清理缓存防止包名污染
             ./gradlew clean --quiet
           done
 
-      - name: Upload Finished Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: HTOS-APC-Full-Collection
