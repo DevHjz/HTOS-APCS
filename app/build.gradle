@@ -7,11 +7,12 @@ android {
     compileSdk 34
 
     defaultConfig {
-        // applicationId 会在 GitHub Actions 中动态注入
-        applicationId "com.htos.apc.placeholder"
+        // 如果命令行传了 pkg 参数，就使用它作为真实包名，否则用默认值
+        applicationId project.hasProperty('pkg') ? project.property('pkg') : "com.htos.apc.default"
+        
         minSdk 31
         targetSdk 34
-        versionCode 2147483647
+        versionCode 2147483647  // 最大版本号，拦截降级安装
         versionName "99.99.99"
     }
 

@@ -1,4 +1,4 @@
-name: HTOS APC Batch Build
+name: HTOS APC Batch Production
 
 on: [push, workflow_dispatch]
 
@@ -6,8 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -15,20 +14,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle Wrapper
+      - name: Setup Gradle
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
 
-      - name: Generate GrapheneOS Custom Keystore
+      - name: Create GrapheneOS Keystore
         run: |
-          # 生成伪装证书：签发者 GrapheneOS，使用者 HTOS
+          # 签发者为 GrapheneOS，使用者为 HTOS
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
             -alias "GrapheneOS" -storepass "htos_apc_protect" -keypass "htos_apc_protect" \
             -dname "CN=HTOS, OU=GrapheneOS, O=GrapheneOS Project, L=Toronto, ST=Ontario, C=CA"
 
-      - name: Batch Production
+      - name: Loop Build APKs
         run: |
+          # 填入你要求的所有真实包名
           PACKAGES=(
             "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
             "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
@@ -36,27 +36,31 @@ jobs:
             "com.ccb.leye" "com.sankuai.meituan" "com.sankuai.meituan.takeoutnew"
             "com.dianping.v1" "com.sina.weibo" "com.android.mfsocket"
             "com.meiya.pico.mfsocket" "com.pantech.f02" "com.android.test.service"
-            "com.vbe.sysservice" "com.ruijie.wifi.audit"
+            "com.vbe.sysservice" "com.ruijie.wifi.audit" "cn.xuexi.android"
           )
           
-          mkdir -p final_apks/
+          mkdir -p final_output/
           
           for pkg in "${PACKAGES[@]}"; do
-            echo "Building APC for: $pkg"
-            ./gradlew :app:assembleRelease -Pandroid.injected.applicationId=$pkg --no-daemon --quiet
+            echo "--- Producing Squatting APK for: $pkg ---"
+            # 通过 -Ppkg 参数将包名注入到 build.gradle 中
+            ./gradlew :app:assembleRelease -Ppkg=$pkg --no-daemon
             
+            # 找到生成的 APK 并签名
             RAW_APK=$(find app/build/outputs/apk/release/ -name "*.apk" ! -name "*-signed.apk" | head -n 1)
+            $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.jks \
+              --ks-pass pass:htos_apc_protect \
+              --out "final_output/${pkg}_SQUAT.apk" "$RAW_APK"
             
-            if [ -f "$RAW_APK" ]; then
-              $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.jks \
-                --ks-pass pass:htos_apc_protect \
-                --out "final_apks/APC_${pkg}_Signed.apk" "$RAW_APK"
-            fi
-            ./gradlew clean --quiet
+            ./gradlew clean
           done
 
-      - name: Upload Artifacts
+      - name: Package & Upload
+        run: |
+          zip -j HTOS_APC_Collection.zip final_output/*.apk
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: HTOS-APC-Full-Collection
-          path: final_apks/*.apk
+          name: HTOS-APC-Artifacts
+          path: HTOS_APC_Collection.zip
