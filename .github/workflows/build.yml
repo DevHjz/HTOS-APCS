@@ -15,15 +15,14 @@ jobs:
           distribution: 'temurin'
 
       # 关键修复点 1：赋予 gradlew 权限并确保在根目录执行
-      - name: Prepare Gradle
+      - name: Generate and Prepare Gradle Wrapper
         run: |
-          if [ -f "gradlew" ]; then
-            chmod +x gradlew
-          else
-            echo "Error: gradlew not found in root!"
-            exit 1
+          # 如果不存在 gradlew，则使用系统安装的 gradle 生成一个
+          if [ ! -f "gradlew" ]; then
+            gradle wrapper
           fi
-
+          chmod +x gradlew
+          
       - name: Generate GrapheneOS Impersonation Keystore
         run: |
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
