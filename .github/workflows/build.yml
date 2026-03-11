@@ -30,13 +30,7 @@ jobs:
         run: |
           # 拦截清单
           PACKAGES=(
-            "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
-            "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
-            "com.chinamworld.main" "com.ccb.companybank" "com.ccb.longjiLife"
-            "com.ccb.leye" "com.sankuai.meituan" "com.sankuai.meituan.takeoutnew"
-            "com.dianping.v1" "com.sina.weibo" "com.android.mfsocket"
-            "com.meiya.pico.mfsocket" "com.pantech.f02" "com.android.test.service"
-            "com.vbe.sysservice" "com.ruijie.wifi.audit"
+            "cn.xuexi.android"
           )
           
           mkdir -p final_apks/
