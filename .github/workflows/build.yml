@@ -14,19 +14,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      # 关键修复点 1：赋予 gradlew 权限并确保在根目录执行
+      - name: Prepare Gradle
+        run: |
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+          else
+            echo "Error: gradlew not found in root!"
+            exit 1
+          fi
 
       - name: Generate GrapheneOS Impersonation Keystore
         run: |
-          mkdir -p keystore
           keytool -genkey -v -keystore release.jks -keyalg RSA -keysize 4096 -validity 36500 \
             -alias "GrapheneOS" -storepass "htos_apc_protect" -keypass "htos_apc_protect" \
             -dname "CN=HTOS, OU=GrapheneOS, O=GrapheneOS Project, L=Toronto, ST=Ontario, C=CA"
 
       - name: Batch Production
         run: |
-          # 定义需要拦截的包名列表
           PACKAGES=(
             "com.xunmeng.pinduoduo" "com.hicorenational.antifraud" "cn.gov.pbc.dcep"
             "cn.hsa.app" "com.service.android.gov.cn" "cn.gov.chinatax.gt4.app"
@@ -38,26 +43,38 @@ jobs:
           )
           
           mkdir -p final_apks/
-          chmod +x gradlew
           
+          # 循环构建每个包名
           for pkg in "${PACKAGES[@]}"; do
-            echo "Building Protector for: $pkg"
-            # 清理之前的构建结果
+            echo "--------------------------------------"
+            echo "Building APC for: $pkg"
+            echo "--------------------------------------"
+            
+            # 使用 -P 参数强制注入应用程序 ID
+            ./gradlew :app:assembleRelease -Pandroid.injected.applicationId=$pkg --stacktrace
+            
+            # 找到生成的 release APK（通常在 app/build/outputs/apk/release/）
+            # 修正路径以确保能精准捕捉
+            RAW_APK=$(find app/build/outputs/apk/release/ -name "*.apk" ! -name "*-signed.apk" | head -n 1)
+            
+            if [ -f "$RAW_APK" ]; then
+              # 使用 Android SDK 附带的 apksigner 进行签名
+              # GitHub Actions 的 Ubuntu 环境中 apksigner 通常在 $ANDROID_HOME/build-tools/ 中
+              $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks release.jks \
+                --ks-pass pass:htos_apc_protect \
+                --out "final_apks/APC_${pkg}_Signed.apk" "$RAW_APK"
+            else
+              echo "Error: APK for $pkg not generated!"
+              exit 1
+            fi
+            
+            # 清理 build 目录以防下次循环冲突
             ./gradlew clean
-            # 注入包名并构建
-            ./gradlew assembleRelease -Pandroid.injected.applicationId=$pkg
-            
-            # 查找生成的未签名 APK
-            UNSIGNED_APK=$(find app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
-            
-            # 使用伪装签名进行签发
-            apksigner sign --ks release.jks --ks-pass pass:htos_apc_protect \
-              --out "final_apks/APC_${pkg}_Signed.apk" "$UNSIGNED_APK"
           done
 
-      - name: Compress and Upload
+      - name: Create Final ZIP
         run: |
-          zip -r HTOS_APC_Full_Collection.zip final_apks/
+          zip -j HTOS_APC_Full_Collection.zip final_apks/*.apk
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
